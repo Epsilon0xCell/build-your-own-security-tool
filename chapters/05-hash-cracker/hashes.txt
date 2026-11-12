@@ -1,0 +1,8 @@
+# Fixture hashes for Chapter 5. Each line is a self-computed digest,
+# made locally with hashlib, of a FAKE demo password that appears in
+# the bundled wordlist.txt (demo-swordfish, demo-hunter2,
+# demo-correct-horse). These hashes protect nothing and guard no
+# real account; they exist so the cracker has something to find.
+d54f1150f4ac76fb4196a2dc6838d3da33f7fa4760eeaac98801196c4779fd78
+428f79cd513ff223ca3a002e4911f5ab
+b00c2c9356b88467325926760ff9f88e2312131a
