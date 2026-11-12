@@ -80,6 +80,10 @@ def parse_frame(frame):
     info.update(kind="ipv4", src=socket.inet_ntoa(payload[12:16]),
                 dst=socket.inet_ntoa(payload[16:20]), ttl=ttl,
                 proto=IP_PROTO.get(proto, str(proto)), ip_len=total_len)
+    if ihl < 20 or (total_len and total_len < ihl):
+        # Header length is invalid (IHL is in 32-bit words, minimum 5),
+        # so there is no trustworthy layer-4 offset to decode from.
+        return info
     l4 = payload[ihl:total_len] if total_len else payload[ihl:]
     if proto == 6 and len(l4) >= 20:
         sport, dport, _seq, _ack = struct.unpack(">HHII", l4[:12])

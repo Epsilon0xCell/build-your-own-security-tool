@@ -66,9 +66,14 @@ def build_upstream_request(method, target, version, headers, body_prefix):
 
     Returns (host, port, bytes_to_send, already_buffered_body_bytes).
     """
+    if target.startswith("https://"):
+        raise ValueError("https targets need CONNECT, which this proxy "
+                         "does not implement")
     if target.startswith("http://"):
         parts = urlsplit(target)
         host = parts.hostname
+        if not host:
+            raise ValueError("absolute URL has no host: %s" % target)
         port = parts.port or 80
         path = parts.path or "/"
         if parts.query:

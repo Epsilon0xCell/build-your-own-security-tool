@@ -23,6 +23,8 @@ QCLASS_IN = 1
 
 def encode_name(name):
     """'example.com' -> b'\\x07example\\x03com\\x00' (length-prefixed labels)."""
+    if not name.rstrip("."):
+        return b"\x00"
     out = b""
     for label in name.rstrip(".").split("."):
         if len(label) > 63:
@@ -50,19 +52,31 @@ def decode_name(packet, offset):
     labels = []
     jumped = False
     next_offset = None
+    seen = set()
     while True:
+        if offset < 0 or offset >= len(packet):
+            raise ValueError("name offset %d out of bounds" % offset)
+        if offset in seen:
+            raise ValueError("compression pointer loop at offset %d" % offset)
+        seen.add(offset)
         length = packet[offset]
         if length == 0:
             if not jumped:
                 next_offset = offset + 1
             break
         if length & 0xC0 == 0xC0:
+            if offset + 2 > len(packet):
+                raise ValueError("truncated compression pointer")
             pointer = struct.unpack(">H", packet[offset:offset + 2])[0] & 0x3FFF
             if not jumped:
                 next_offset = offset + 2
             offset = pointer
             jumped = True
             continue
+        if length & 0xC0:
+            raise ValueError("reserved label bits set: 0x%02x" % length)
+        if offset + 1 + length > len(packet):
+            raise ValueError("label runs past end of packet")
         labels.append(packet[offset + 1:offset + 1 + length].decode("ascii"))
         offset += 1 + length
     return ".".join(labels), next_offset
@@ -70,6 +84,9 @@ def decode_name(packet, offset):
 
 def parse_response(packet, expected_id):
     """Parse header, skip questions, decode answer records."""
+    if len(packet) < 12:
+        raise ValueError("response too short for a DNS header: %d bytes"
+                         % len(packet))
     qid, flags, qd, an, ns, ar = struct.unpack(">HHHHHH", packet[:12])
     if qid != expected_id:
         raise ValueError("response ID %d does not match query ID %d"
@@ -84,9 +101,13 @@ def parse_response(packet, expected_id):
     answers = []
     for _ in range(an + ns + ar):
         name, offset = decode_name(packet, offset)
+        if offset is None or offset + 10 > len(packet):
+            raise ValueError("truncated resource record header")
         rtype, rclass, ttl, rdlen = struct.unpack(">HHIH",
                                                   packet[offset:offset + 10])
         offset += 10
+        if offset + rdlen > len(packet):
+            raise ValueError("truncated resource record data")
         rdata = packet[offset:offset + rdlen]
         answers.append((name, QTYPE_BY_ID.get(rtype, str(rtype)),
                         ttl, format_rdata(packet, offset, rtype, rdata)))

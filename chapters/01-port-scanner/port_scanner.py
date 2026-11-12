@@ -26,12 +26,17 @@ def parse_ports(spec):
             continue
         if "-" in part:
             lo, hi = part.split("-", 1)
-            ports.update(range(int(lo), int(hi) + 1))
+            lo, hi = int(lo), int(hi)
+            if lo > hi:
+                raise ValueError("port range reversed: %s" % part)
+            ports.update(range(lo, hi + 1))
         else:
             ports.add(int(part))
     bad = [p for p in ports if not 1 <= p <= 65535]
     if bad:
         raise ValueError("ports out of range: %s" % bad)
+    if not ports:
+        raise ValueError("no ports specified")
     return sorted(ports)
 
 
@@ -75,6 +80,13 @@ def main(argv=None):
     ap.add_argument("--banner", action="store_true",
                     help="grab the banner of each open port")
     args = ap.parse_args(argv)
+
+    if args.workers < 1:
+        print("error: --workers must be at least 1", file=sys.stderr)
+        return 2
+    if args.timeout <= 0:
+        print("error: --timeout must be greater than 0", file=sys.stderr)
+        return 2
 
     try:
         ports = parse_ports(args.ports)
