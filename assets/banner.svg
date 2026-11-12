@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+<rect width="1200" height="300" fill="#0d1117"/>
+<text x="60" y="105" font-family="monospace" font-size="50" fill="#58a6ff">build-your-own-security-tool</text>
+<text x="60" y="165" font-family="monospace" font-size="27" fill="#c9d1d9">Learn security tooling by building it: 30 tools, from scratch.</text>
+<text x="60" y="215" font-family="monospace" font-size="22" fill="#8b949e">port scanner - DNS resolver - proxy - packet parser - fuzzer - cracker</text>
+<text x="60" y="255" font-family="monospace" font-size="22" fill="#8b949e">Every build ships with the defensive note: how it looks in telemetry.</text>
+</svg>
